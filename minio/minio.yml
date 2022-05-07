@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+spec:
+  serviceName: minio
+  replicas: 4
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      imagePullSecrets:
+        - name: harbor-secret
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: minio
+                operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - minio 
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: minio
+        imagePullPolicy: IfNotPresent
+        image: minio/minio
+        env:
+        - name: MINIO_ACCESS_KEY
+          value: "admin123"
+        - name: MINIO_SECRET_KEY
+          value: "admin123"
+        
+        command:
+        - /bin/sh
+        - -c
+        - minio server --console-address ":5000" http://minio-{0...3}.minio.default.svc.cluster.local/data
+        ports:
+        - containerPort: 9000
+        # These volume mounts are persistent. Each pod in the PetSet
+        # gets a volume mounted based on this field.
+        volumeMounts:
+        - name: minio-data
+          mountPath: /data
+        - name: tz
+          mountPath: /etc/localtime
+      volumes:
+        - name: tz
+          hostPath:
+            path: /etc/localtime
+  # These are converted to volume claims by the controller
+  # and mounted at the paths mentioned above.
+  volumeClaimTemplates:
+  - metadata:
+      name: minio-data
+      labels: 
+        app: minio
+    spec:
+      storageClassName: local-storage
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 50Gi
+      # Uncomment and add storageClass specific to your requirements below. Read more https://kubernetes.io/docs/concepts/storage/persistent-volumes/#class-1
+      #storageClassName:
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+spec:
+  type: NodePort
+  ports:
+    - name: data 
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
+    - name: console
+      port: 5000
+      targetPort: 5000
+      nodePort: 30500
+  selector:
+    app: minio

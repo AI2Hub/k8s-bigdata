@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dolphinscheduler-master
+  labels:
+    app: dolphinscheduler-master
+spec:
+  podManagementPolicy: Parallel
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dolphinscheduler-master
+  serviceName: dolphinscheduler-master
+  template:
+    metadata:
+      labels:
+        app: dolphinscheduler-master
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: dolphinscheduler
+                operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - dolphinscheduler-master
+              topologyKey: "kubernetes.io/hostname"
+      imagePullSecrets:
+      - name: harbor-secret
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: dolphinscheduler-master
+        image: apache/dolphinscheduler:2.0.5
+        imagePullPolicy: IfNotPresent
+        args: 
+          - "master-server"  
+        ports:
+        - containerPort: 5678
+          name: master-port       
+        env:
+        - name: TZ
+          value: "Asia/Shanghai"
+        envFrom:
+          - configMapRef:
+              name: dolphinscheduler-common
+          - configMapRef:
+              name: dolphinscheduler-master
+        resources:
+          limits:
+            memory: "4Gi"
+            cpu: 2
+          requests:
+            cpu: 0.5
+            memory: "2Gi"
+        livenessProbe:
+          exec:
+            command: ["bash", "/root/checkpoint.sh", "MasterServer"]
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          exec:
+            command: ["bash", "/root/checkpoint.sh", "MasterServer"]
+          initialDelaySeconds: 30
+          periodSeconds: 30"
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dolphinscheduler-master
+spec:
+  ports:
+  - name: master-port
+    port: 5678
+    targetPort: 5678
+  selector:
+    app: dolphinscheduler-master

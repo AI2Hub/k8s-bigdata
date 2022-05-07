@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dolphinscheduler-common
+data:
+  # mysql
+  DATABASE_TYPE: "mysql"
+  DATABASE_DRIVER: "com.mysql.jdbc.Driver"
+  DATABASE_HOST: "dolphinscheduler-mysql"
+  DATABASE_PORT: "3306"
+  DATABASE_USERNAME: "root"
+  DATABASE_PASSWORD: "root"
+  DATABASE_DATABASE: "dolphinscheduler"
+  DATABASE_PARAMS: "useUnicode=true&characterEncoding=UTF-8&useSSL=false"
+
+  # zk
+  REGISTRY_PLUGIN_NAME: "zookeeper"
+  REGISTRY_SERVERS: "dolphinscheduler-zookeeper:2181"
+
+  #common
+  DOLPHINSCHEDULER_OPTS: ""
+  # common env
+  DATA_BASEDIR_PATH: "/tmp/dolphinscheduler"
+  RESOURCE_STORAGE_TYPE: "HDFS"
+  RESOURCE_UPLOAD_PATH: "/dolphinscheduler"
+  FS_DEFAULT_FS: "file:///"
+  FS_S3A_ENDPOINT: "s3.xxx.amazonaws.com"
+  FS_S3A_ACCESS_KEY: "xxxxxxx"
+  FS_S3A_SECRET_KEY: "xxxxxxx"
+  HADOOP_SECURITY_AUTHENTICATION_STARTUP_STATE: "false"
+  JAVA_SECURITY_KRB5_CONF_PATH: "/opt/krb5.conf"
+  LOGIN_USER_KEYTAB_USERNAME: "hdfs@HADOOP.COM"
+  LOGIN_USER_KEYTAB_PATH: "/opt/hdfs.keytab"
+  KERBEROS_EXPIRE_TIME: "2"
+  HDFS_ROOT_USER: "hdfs"
+  RESOURCE_MANAGER_HTTPADDRESS_PORT: "8088"
+  YARN_RESOURCEMANAGER_HA_RM_IDS: ""
+  YARN_APPLICATION_STATUS_ADDRESS: "http://ds1:%s/ws/v1/cluster/apps/%s"
+  YARN_JOB_HISTORY_STATUS_ADDRESS: "http://ds1:19888/ws/v1/history/mapreduce/jobs/%s"
+  DATASOURCE_ENCRYPTION_ENABLE: "false"
+  DATASOURCE_ENCRYPTION_SALT: "!@#$%^&*"
+  SUDO_ENABLE: "true"
+  # dolphinscheduler env
+  HADOOP_HOME: "/opt/soft/hadoop"
+  HADOOP_CONF_DIR: "/opt/soft/hadoop/etc/hadoop"
+  SPARK_HOME1: "/opt/soft/spark1"
+  SPARK_HOME2: "/opt/soft/spark2"
+  PYTHON_HOME: "/usr/bin/python"
+  JAVA_HOME: "/usr/local/openjdk-8"
+  HIVE_HOME: "/opt/soft/hive"
+  FLINK_HOME: "/opt/soft/flink"
+  DATAX_HOME: "/opt/soft/datax"
+  SESSION_TIMEOUT_MS: "60000"
+  ORG_QUARTZ_THREADPOOL_THREADCOUNT: "25"
+  ORG_QUARTZ_SCHEDULER_BATCHTRIGGERACQUISTITIONMAXCOUNT: "1"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dolphinscheduler-master
+data:
+  # Master Server
+  LOGGER_SERVER_OPTS: "-Xms512m -Xmx512m -Xmn256m"
+  MASTER_SERVER_OPTS: "-Xms1g -Xmx1g -Xmn512m"
+  MASTER_EXEC_THREADS: "100"
+  MASTER_EXEC_TASK_NUM: "20"
+  MASTER_DISPATCH_TASK_NUM: "3"
+  MASTER_HOST_SELECTOR: "LowerWeight"
+  MASTER_HEARTBEAT_INTERVAL: "10"
+  MASTER_TASK_COMMIT_RETRYTIMES: "5"
+  MASTER_TASK_COMMIT_INTERVAL: "1000"
+  MASTER_MAX_CPULOAD_AVG: "-1"
+  MASTER_RESERVED_MEMORY: "0.3"
+  MASTER_FAILOVER_INTERVAL: "10"
+  MASTER_KILL_YARN_JOB_WHEN_HANDLE_FAILOVER: "true"
+  MASTER_PERSIST_EVENT_STATE_THREADS: "10"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dolphinscheduler-worker
+data:
+  # Worker Server
+  LOGGER_SERVER_OPTS: "-Xms512m -Xmx512m -Xmn256m"
+  WORKER_SERVER_OPTS: "-Xms1g -Xmx1g -Xmn512m"
+  WORKER_EXEC_THREADS: "100"
+  WORKER_HEARTBEAT_INTERVAL: "10"
+  WORKER_HOST_WEIGHT: "100"
+  WORKER_MAX_CPULOAD_AVG: "-1"
+  WORKER_RESERVED_MEMORY: "0.3"
+  WORKER_GROUPS: "default"
+  WORKER_RETRY_REPORT_TASK_STATUES_INTERVAL: "10"

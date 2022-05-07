@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dolphinscheduler-alert
+  labels:
+    app: dolphinscheduler-alert
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%    
+  selector:
+    matchLabels:
+      app: dolphinscheduler-alert
+  template:
+    metadata:
+      labels:
+        app: dolphinscheduler-alert
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: dolphinscheduler
+                operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - dolphinscheduler-alert
+              topologyKey: "kubernetes.io/hostname"
+      imagePullSecrets:
+      - name: harbor-secret
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: dolphinscheduler-alert
+        image: apache/dolphinscheduler:2.0.5
+        imagePullPolicy: IfNotPresent
+        args: 
+          - "alert-server"  
+        ports:
+        - containerPort: 50052
+          name: alert-port       
+        env:
+        - name: TZ
+          value: "Asia/Shanghai"
+        - name: ALERT_SERVER_OPTS
+          value: "-Xms512m -Xmx512m -Xmn256m"
+        envFrom:
+          - configMapRef:
+              name: dolphinscheduler-common
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: 1
+          requests:
+            cpu: 0.5
+            memory: "500Mi"
+        livenessProbe:
+          exec:
+            command: ["bash", "/root/checkpoint.sh", "AlertServer"]
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          exec:
+            command: ["bash", "/root/checkpoint.sh", "AlertServer"]
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dolphinscheduler-alert
+spec:
+  ports:
+  - name: alert-port
+    port: 50052
+    targetPort: 50052
+  selector:
+    app: dolphinscheduler-alert
