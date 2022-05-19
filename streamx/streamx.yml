@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streamx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: streamx
+  template:
+    metadata:
+      labels:
+        app: streamx
+    spec:
+      imagePullSecrets:
+        - name: harbor-secret
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: streamx
+                operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - streamx 
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: streamx
+        imagePullPolicy: IfNotPresent
+        image: 10.150.30.17:28080/ops/streamx:2.12_1.2.3
+        env:
+        - name: DB_HOST
+          value: "mysql.dev.svc.cluster.local"
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_NAME
+          value: "streamx_db"
+        - name: DB_USER
+          value: "xsy"
+        - name: DB_PASSWD
+          value: ""
+        ports:
+        - containerPort: 10000
+          name: web
+        livenessProbe:
+          tcpSocket:
+            port: 10000
+          initialDelaySeconds: 30
+          periodSeconds: 60
+        volumeMounts:
+        - name: flink-conf
+          mountPath: /opt/soft/flink-1.13.6/conf/flink-conf.yaml
+          subPath: flink-conf.yaml
+        - name: k8s-conf
+          mountPath: /root/.kube/config
+          subPath: config
+        - name: dockersock
+          mountPath: /var/run/docker.sock
+      volumes:
+      - name: flink-conf
+        configMap:
+          name: streamx
+          items:
+          - key: flink-conf.yaml
+            path: flink-conf.yaml
+      - name: k8s-conf
+        configMap:
+          name: streamx
+          items:
+          - key: config
+            path: config       
+      - name: dockersock
+        hostPath: 
+          path: /var/run/docker.sock
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: streamx
+spec:
+  ports:
+    - name: web
+      port: 10000
+      targetPort: 10000
+      protocol: TCP
+  selector:
+    app: streamx

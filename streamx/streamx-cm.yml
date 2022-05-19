@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: streamx
+  labels:
+    app: streamx
+data:
+  # flink配置
+  flink-conf.yaml: |
+
+  # k8s集群配置
+  config: |
