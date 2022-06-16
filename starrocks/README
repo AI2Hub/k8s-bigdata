@@ -1,0 +1,5 @@
+# 修改root密码
+SET PASSWORD = PASSWORD('bigdata1234');
+
+# 添加backend节点
+ALTER SYSTEM ADD BACKEND "host:port";
