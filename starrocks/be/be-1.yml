@@ -56,13 +56,13 @@ spec:
         readinessProbe:
           tcpSocket:
             port: 9050
-          initialDelaySeconds: 30
-          timeoutSeconds: 5
+          initialDelaySeconds: 60
+          timeoutSeconds: 10
         livenessProbe:
           tcpSocket:
             port: 9050
-          initialDelaySeconds: 30
-          timeoutSeconds: 5
+          initialDelaySeconds: 60
+          timeoutSeconds: 10
         volumeMounts:
         - name: be-data
           mountPath: /starrocks/be/storage
