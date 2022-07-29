@@ -33,7 +33,7 @@ spec:
       containers:
       - name: streamx
         imagePullPolicy: IfNotPresent
-        image: 10.150.30.17:28080/ops/streamx:2.12_1.2.3
+        image: 10.150.30.17:28080/ops/streamx:2.11_1.2.4
         env:
         - name: DB_HOST
           value: "mysql.dev.svc.cluster.local"
@@ -45,6 +45,8 @@ spec:
           value: "xsy"
         - name: DB_PASSWD
           value: ""
+        - name: DOCKER_NAMESPACE
+          value: "shsl-dev"
         ports:
         - containerPort: 10000
           name: web
