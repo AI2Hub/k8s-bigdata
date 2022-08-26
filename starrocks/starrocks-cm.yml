@@ -58,6 +58,9 @@ data:
     # log_buffer_level = -1
 
     default_rowset_type = beta
+
+    # 内存限制,默认值是90%,表示最大内存占节点可分配内存的比例
+    mem_limit = 60%
   fe.conf: |
     # Licensed to the Apache Software Foundation (ASF) under one
     # or more contributor license agreements.  See the NOTICE file
