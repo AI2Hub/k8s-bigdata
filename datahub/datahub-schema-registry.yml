@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datahub-schema-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datahub-schema-registry
+  template:
+    metadata:
+      labels:
+        app: datahub-schema-registry
+    spec:
+      imagePullSecrets:
+        - name: harbor-secret
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: datahub
+                operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - datahub-schema-registry
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: datahub-schema-registry
+        imagePullPolicy: IfNotPresent
+        image: confluentinc/cp-schema-registry:6.0.1
+        env:
+        - name: SCHEMA_REGISTRY_HOST_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: SCHEMA_REGISTRY_LISTENERS
+          value: 'http://0.0.0.0:8081'
+        - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
+          value: 'kafka-0.kafka.prod.svc.cluster.local:9092,kafka-1.kafka.prod.svc.cluster.local:9092'
+        - name: SCHEMA_REGISTRY_KAFKASTORE_GROUP_ID
+          value: prerequisites
+        - name: SCHEMA_REGISTRY_MASTER_ELIGIBILITY
+          value: 'true'
+        - name: SCHEMA_REGISTRY_HEAP_OPTS
+          value: '-Xms512M -Xmx512M'
+        - name: JMX_PORT
+          value: '5555'
+        ports:
+        - name: schema-registry
+          containerPort: 8081
+---          
+apiVersion: v1
+kind: Service
+metadata:
+  name: datahub-schema-registry
+spec:
+  selector:
+    app: datahub-schema-registry
+  ports:
+    - name: schema-registry
+      port: 8081
+      targetPort: 8081
+      protocol: TCP

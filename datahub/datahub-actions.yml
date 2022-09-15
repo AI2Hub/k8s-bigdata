@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datahub-actions
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datahub-actions
+  template:
+    metadata:
+      labels:
+        app: datahub-actions
+    spec:
+      imagePullSecrets:
+        - name: harbor-secret
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: datahub-actions
+                operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - datahub-actions 
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: datahub-actions
+        imagePullPolicy: IfNotPresent
+        image: 10.150.30.17:28080/ops/acryl-datahub-actions:v0.0.1-beta.13
+        env:
+        - name: GMS_HOST
+          value: ""
+        - name: GMS_PORT
+          value: "8080"
+        - name: KAFKA_BOOTSTRAP_SERVER
+          value: ""
+        - name: KAFKA_AUTO_OFFSET_POLICY
+          value: "latest"
+        - name: ACTION_FILE_NAME
+          value: "executor.yaml"
+        ports:
+        - name: http
+          containerPort: 9093
+        resources:
+          limits:
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        livenessProbe:
+          tcpSocket:
+            port: 9093
+          initialDelaySeconds: 30
+          periodSeconds: 10
+apiVersion: v1
+kind: Service
+metadata:
+  name: datahub-actions
+spec:
+  selector:
+    app: datahub-actions
+  ports:
+    - name: http
+      port: 9093
+      targetPort: 9093
+      protocol: TCP

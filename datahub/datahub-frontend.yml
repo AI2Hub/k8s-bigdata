@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datahub-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datahub-frontend
+  template:
+    metadata:
+      labels:
+        app: datahub-frontend
+    spec:
+      imagePullSecrets:
+        - name: harbor-secret
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: datahub-frontend
+                operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - datahub-frontend 
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: datahub-frontend
+        imagePullPolicy: IfNotPresent
+        image: linkedin/datahub-frontend-react:v0.8.34
+        env:
+        - name: DATAHUB_GMS_HOST
+          value: "datahub-gms"
+        - name: DATAHUB_GMS_PORT
+          value: "8080"
+        - name: DATAHUB_SECRET
+          value: "tpJZjXQ3sk9f"
+        - name: DATAHUB_APP_VERSION
+          value: '1.0'
+        - name: DATAHUB_PLAY_MEM_BUFFER_SIZE
+          value: 10MB
+        - name: DATAHUB_ANALYTICS_ENABLED
+          value: 'true'
+        - name: KAFKA_BOOTSTRAP_SERVER
+          value: 'kafka-0.kafka.prod.svc.cluster.local:9092,kafka-1.kafka.prod.svc.cluster.local:9092'
+        - name: ELASTIC_CLIENT_HOST
+          value: 'datahub-es'
+        - name: ELASTIC_CLIENT_PORT
+          value: '9200'
+        - name: DATAHUB_TRACKING_TOPIC
+          value: DataHubUsageEvent_v1
+        ports:
+        - name: http
+          containerPort: 9002
+        resources:
+          limits:
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        livenessProbe:
+          failureThreshold: 4
+          httpGet:
+            path: /admin
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 4
+          httpGet:
+            path: /admin
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datahub-frontend
+spec:
+  selector:
+    app: datahub-frontend
+  ports:
+    - name: http
+      port: 9002
+      targetPort: 9002
+      protocol: TCP

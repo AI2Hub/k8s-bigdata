@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: datahub-elasticsearch-setup-job
+spec:
+  template:
+    metadata:
+      labels:
+        app: elasticsearch-setup-job
+    spec:
+      imagePullSecrets:
+        - name: harbor-secret
+      restartPolicy: Never
+      containers:
+      - name: elasticsearch-setup-job
+        image: linkedin/datahub-elasticsearch-setup:v0.8.34
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: ELASTICSEARCH_HOST
+          value: datahub-es
+        - name: ELASTICSEARCH_PORT
+          value: '9200'
+        - name: DATAHUB_ANALYTICS_ENABLED
+          value: 'true'
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 300m
+            memory: 256Mi      

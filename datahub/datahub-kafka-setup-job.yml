@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: datahub-kafka-setup-job
+spec:
+  template:
+    metadata:
+      labels:
+        app: kafka-setup-job
+    spec:
+      imagePullSecrets:
+        - name: harbor-secret
+      restartPolicy: Never
+      containers:
+      - name: kafka-setup-job
+        image: linkedin/datahub-kafka-setup:v0.8.34
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: 'zk-0.zookeeper:2181,zk-1.zookeeper:2181,zk-2.zookeeper:2181'
+        - name: KAFKA_BOOTSTRAP_SERVER
+          value: 'kafka-0.kafka.prod.svc.cluster.local:9092,kafka-1.kafka.prod.svc.cluster.local:9092'
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 300m
+            memory: 256Mi      

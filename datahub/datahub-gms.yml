@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datahub-gms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datahub-gms
+  template:
+    metadata:
+      labels:
+        app: datahub-gms
+    spec:
+      imagePullSecrets:
+        - name: harbor-secret
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: datahub
+                operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - datahub-gms 
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: datahub-gms
+        imagePullPolicy: IfNotPresent
+        image: bjccr.tencentcloudcr.com/retail_ops/datahub:v0.8.34-fix4
+        env:
+        - name: DATAHUB_GMS_PORT
+          value: "8080"
+        - name: MCE_CONSUMER_ENABLED
+          value: "true"
+        - name: MAE_CONSUMER_ENABLED
+          value: "true"
+        - name: ENTITY_REGISTRY_CONFIG_PATH
+          value: /datahub/datahub-gms/resources/entity-registry.yml
+        - name: DATAHUB_ANALYTICS_ENABLED
+          value: "true"
+        - name: EBEAN_DATASOURCE_USERNAME
+          value: "xsy"
+        - name: EBEAN_DATASOURCE_PASSWORD
+          value: "233C4V33Q1fWqxVY"
+        - name: EBEAN_DATASOURCE_HOST
+          value: "10.155.40.11:3306"
+        - name: EBEAN_DATASOURCE_URL
+          value: "jdbc:mysql://10.155.40.11:3306/datahub_db?useSSL=false&useUnicode=yes&characterEncoding=UTF-8"
+        - name: EBEAN_DATASOURCE_DRIVER
+          value: "com.mysql.cj.jdbc.Driver"
+        - name: KAFKA_BOOTSTRAP_SERVER
+          value: "kafka-0.kafka.prod.svc.cluster.local:9092,kafka-1.kafka.prod.svc.cluster.local:9092"
+        - name: KAFKA_SCHEMAREGISTRY_URL
+          value: "http://datahub-schema-registry:8081"
+        - name: ELASTICSEARCH_HOST
+          value: "datahub-es"
+        - name: ELASTICSEARCH_PORT
+          value: "9200"
+        - name: GRAPH_SERVICE_IMPL
+          value: "neo4j"
+        - name: NEO4J_HOST
+          value: "datahub-neo4j:7474"
+        - name: NEO4J_URI
+          value: "bolt://datahub-neo4j"
+        - name: NEO4J_USERNAME
+          value: "neo4j"
+        - name: NEO4J_PASSWORD
+          value: "datahub"
+        - name: UI_INGESTION_ENABLED
+          value: "true"
+        - name: SECRET_SERVICE_ENCRYPTION_KEY
+          value: "EiSWzgfxumDn"
+        - name: UI_INGESTION_DEFAULT_CLI_VERSION
+          value: 0.8.34.1
+        - name: SEARCH_SERVICE_ENABLE_CACHE
+          value: "false"
+        - name: JAVA_OPTS
+          value: "-Xms2g -Xmx2g"
+        ports:
+        - name: http
+          containerPort: 8080
+        resources:
+          limits:
+            memory: 3Gi
+          requests:
+            cpu: 300m
+            memory: 2Gi   
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datahub-gms
+spec:
+  selector:
+    app: datahub-gms
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP  
