@@ -2,4 +2,4 @@
 SET PASSWORD = PASSWORD('bigdata1234');
 
 # 添加backend节点
-ALTER SYSTEM ADD BACKEND "host:port";
+ALTER SYSTEM ADD BACKEND "host:9050";
