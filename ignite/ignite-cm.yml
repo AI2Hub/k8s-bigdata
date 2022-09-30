@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ignite-config
+  labels:
+    app: ignite-config
+
+data:
+  node-configuration.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <beans xmlns="http://www.springframework.org/schema/beans"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:util="http://www.springframework.org/schema/util"
+          xsi:schemaLocation="
+            http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/util
+            http://www.springframework.org/schema/util/spring-util.xsd">
+
+    <bean class="org.apache.ignite.configuration.IgniteConfiguration">
+            <property name="workDirectory" value="/ignite/work"/>
+            <property name="cacheConfiguration">
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="myCache"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL_SNAPSHOT"/>
+                </bean>
+            </property>
+            <property name="sqlConfiguration">
+                <bean class="org.apache.ignite.configuration.SqlConfiguration">
+                    <property name="sqlSchemas">
+                        <list>
+                            <value>test</value>
+                            <value>dataservice</value>
+                            <value>sit_dataservice</value>
+          <value>uat_dataservice</value> 
+          <value>uat</value> 
+          <value>sit</value> 
+                        </list>
+                    </property>
+                </bean>
+            </property>
+            <property name="dataStorageConfiguration">
+                <bean class="org.apache.ignite.configuration.DataStorageConfiguration">
+                    <property name="defaultDataRegionConfiguration">
+                        <bean class="org.apache.ignite.configuration.DataRegionConfiguration">
+                            <property name="persistenceEnabled" value="true"/>
+                            <property name="name" value="Default_Region"/>
+          <property name="initialSize" value="#{1024 * 1024 * 1024}"/>
+                        </bean>
+                    </property>
+
+                    <property name="walPath" value="/ignite/wal"/>
+                    <property name="walArchivePath" value="/ignite/walarchive"/>
+                </bean>
+
+            </property>
+
+            <property name="discoverySpi">
+                <bean class="org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi">
+                    <property name="ipFinder">
+                        <bean class="org.apache.ignite.spi.discovery.tcp.ipfinder.kubernetes.TcpDiscoveryKubernetesIpFinder">
+                            <property name="namespace" value="uat"/>
+                            <property name="masterUrl" value="https://kubernetes.default.svc.cluster.local:443"/>
+                            <constructor-arg>
+                                <bean class="org.apache.ignite.kubernetes.configuration.KubernetesConnectionConfiguration">
+                                    <property name="namespace" value="uat" />
+                                </bean>
+                            </constructor-arg>
+                        </bean>
+                    </property>
+                </bean>
+            </property>
+            <property name="authenticationEnabled" value="true"/>
+    </bean>
+    </beans>
